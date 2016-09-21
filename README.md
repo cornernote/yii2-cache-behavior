@@ -40,6 +40,8 @@ public function behaviors() {
         // or
         [
             'class' => \cornernote\cachebehavior\CacheBehavior::className(),
+            'cache' => 'cache',
+            'backupCache' => 'fileCache',
         ],
     ];
 }

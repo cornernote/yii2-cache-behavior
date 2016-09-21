@@ -45,7 +45,7 @@ class CacheBehavior extends Behavior
      *
      * @var bool
      */
-    public $cacheBackup = false;
+    public $backupCache = false;
 
     /**
      * An array of the models to clear cache when this models cache is cleared
@@ -79,15 +79,15 @@ class CacheBehavior extends Behavior
      * Get a cached value.
      *
      * @param string $key
-     * @param bool $useCacheBackup
+     * @param bool $useBackupCache
      * @return mixed
      */
-    public function getCache($key, $useCacheBackup = false)
+    public function getCache($key, $useBackupCache = false)
     {
         $fullKey = $this->getCacheKeyPrefix() . $key;
         $value = Yii::$app->{$this->cache}->get($fullKey);
-        if (!$value && $useCacheBackup && $this->cacheBackup) {
-            $value = Yii::$app->{$this->cacheBackup}->get($fullKey);
+        if (!$value && $useBackupCache && $this->backupCache) {
+            $value = Yii::$app->{$this->backupCache}->get($fullKey);
         }
         return $value;
     }
@@ -97,15 +97,15 @@ class CacheBehavior extends Behavior
      *
      * @param string $key
      * @param mixed $value
-     * @param bool $useCacheBackup
+     * @param bool $useBackupCache
      * @return mixed
      */
-    public function setCache($key, $value, $useCacheBackup = false)
+    public function setCache($key, $value, $useBackupCache = false)
     {
         $fullKey = $this->getCacheKeyPrefix() . $key;
         Yii::$app->{$this->cache}->set($fullKey, $value);
-        if ($useCacheBackup && $this->cacheBackup) {
-            Yii::$app->{$this->cacheBackup}->set($fullKey, $value);
+        if ($useBackupCache && $this->backupCache) {
+            Yii::$app->{$this->backupCache}->set($fullKey, $value);
         }
         return $value;
     }
