@@ -174,7 +174,7 @@ class CacheBehavior extends Behavior
     {
         $owner = $this->owner;
         $pk = is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey();
-        return md5($this->className() . '.getCacheKeyPrefix.' . $owner->className() . '.' . $pk);
+        return md5($owner->className() . '.getCacheKeyPrefix.' . $pk);
     }
 
 }
