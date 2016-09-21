@@ -1,0 +1,26 @@
+{
+    "name": "cornernote/yii2-cache-behavior",
+    "description": "Cache behavior for Yii2.",
+    "keywords": ["yii2", "cache"],
+    "type": "yii2-behavior",
+    "license": "BSD-3-Clause",
+    "authors": [
+        {
+            "name": "Brett O'Donnell",
+            "email": "cornernote@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~4.0",
+        "phpunit/dbunit": "~1.0",
+        "scrutinizer/ocular": "~1.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "cornernote\\cachebehavior\\": "src"
+        }
+    }
+}

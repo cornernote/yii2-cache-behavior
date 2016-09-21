@@ -1,0 +1,11 @@
+/**
+ * MySQL
+ */
+
+DROP TABLE IF EXISTS `post`;
+
+CREATE TABLE `post` (
+  `id` INT(11) NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  `title` VARCHAR(255) NOT NULL,
+  `body` TEXT NOT NULL
+);
