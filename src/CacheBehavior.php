@@ -136,7 +136,13 @@ class CacheBehavior extends Behavior
      */
     public function getCacheKeyPrefix()
     {
-        return Yii::$app->cache->get($this->getCacheKeyPrefixName());
+        $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
+        $cacheKeyPrefix = Yii::$app->cache->get($cacheKeyPrefixName);
+        if (!$cacheKeyPrefix) {
+            $cacheKeyPrefix = uniqid();
+            Yii::$app->{$this->cache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
+        }
+        return $cacheKeyPrefix;
     }
 
     /**
@@ -149,7 +155,7 @@ class CacheBehavior extends Behavior
         if (!$cacheKeyPrefix) {
             $cacheKeyPrefix = uniqid();
         }
-        Yii::$app->cache->set($this->getCacheKeyPrefixName(), $cacheKeyPrefix);
+        Yii::$app->{$this->cache}->set($this->getCacheKeyPrefixName(), $cacheKeyPrefix);
     }
 
     /**
@@ -163,5 +169,5 @@ class CacheBehavior extends Behavior
         $pk = is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey();
         return md5($this->className() . '.getCacheKeyPrefix.' . $owner->className() . '.' . $pk);
     }
-    
+
 }
