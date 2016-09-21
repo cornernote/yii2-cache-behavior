@@ -84,7 +84,7 @@ class CacheBehavior extends Behavior
      */
     public function getCache($key, $useBackupCache = false)
     {
-        $fullKey = $this->getCacheKeyPrefix() . $key;
+        $fullKey = $this->getCacheKeyPrefix() . '.' . $key;
         $value = Yii::$app->{$this->cache}->get($fullKey);
         if (!$value && $useBackupCache && $this->backupCache) {
             $value = Yii::$app->{$this->backupCache}->get($fullKey);
@@ -102,7 +102,7 @@ class CacheBehavior extends Behavior
      */
     public function setCache($key, $value, $useBackupCache = false)
     {
-        $fullKey = $this->getCacheKeyPrefix() . $key;
+        $fullKey = $this->getCacheKeyPrefix() . '.' . $key;
         Yii::$app->{$this->cache}->set($fullKey, $value);
         if ($useBackupCache && $this->backupCache) {
             Yii::$app->{$this->backupCache}->set($fullKey, $value);
@@ -130,24 +130,13 @@ class CacheBehavior extends Behavior
     }
 
     /**
-     * Get the cache prefix name.
-     *
-     * @return string
-     */
-    private function getCacheKeyPrefixName()
-    {
-        $owner = $this->owner;
-        return 'getCacheKeyPrefix.' . $owner->className() . '.' . (is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey());
-    }
-
-    /**
      * Get the cache prefix.
      *
      * @return bool|string
      */
-    private function getCacheKeyPrefix()
+    public function getCacheKeyPrefix()
     {
-        return Yii::$app->cache->get($this->getCacheKeyPrefixName()) . '.';
+        return Yii::$app->cache->get($this->getCacheKeyPrefixName());
     }
 
     /**
@@ -155,7 +144,7 @@ class CacheBehavior extends Behavior
      *
      * @param null|string $cacheKeyPrefix
      */
-    private function setCacheKeyPrefix($cacheKeyPrefix = null)
+    public function setCacheKeyPrefix($cacheKeyPrefix = null)
     {
         if (!$cacheKeyPrefix) {
             $cacheKeyPrefix = uniqid();
@@ -163,4 +152,16 @@ class CacheBehavior extends Behavior
         Yii::$app->cache->set($this->getCacheKeyPrefixName(), $cacheKeyPrefix);
     }
 
+    /**
+     * Get the cache prefix name.
+     *
+     * @return string
+     */
+    protected function getCacheKeyPrefixName()
+    {
+        $owner = $this->owner;
+        $pk = is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey();
+        return md5($this->className() . '.getCacheKeyPrefix.' . $owner->className() . '.' . $pk);
+    }
+    
 }
