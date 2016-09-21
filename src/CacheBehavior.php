@@ -139,7 +139,7 @@ class CacheBehavior extends Behavior
         $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
         $cacheKeyPrefix = Yii::$app->{$this->cache}->get($cacheKeyPrefixName);
         if (!$cacheKeyPrefix && $this->backupCache) {
-            Yii::$app->{$this->backupCache}->get($cacheKeyPrefixName);
+            $cacheKeyPrefix = Yii::$app->{$this->backupCache}->get($cacheKeyPrefixName);
         }
         if (!$cacheKeyPrefix) {
             $cacheKeyPrefix = uniqid();
