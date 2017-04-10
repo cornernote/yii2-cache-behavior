@@ -8,9 +8,7 @@
 
 namespace tests;
 
-use tests\models\PostA;
-use tests\models\PostB;
-use Yii;
+use tests\models\Post;
 
 /**
  * CacheBehaviorTest
@@ -23,8 +21,9 @@ class CacheBehaviorTest extends DatabaseTestCase
      */
     public function testCache()
     {
-        //$post = Post::findOne(2);
-        //$this->assertNotNull($post->deleted_at);
+        $post = Post::findOne(2);
+        $post->setCache('test', 'foobar');
+        $this->assertEquals('foobar', $post->getCache('test'));
     }
 
 }
