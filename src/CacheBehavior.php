@@ -60,6 +60,7 @@ class CacheBehavior extends Behavior
     public function events()
     {
         return [
+            BaseActiveRecord::EVENT_AFTER_INSERT => 'clearCacheEvent',
             BaseActiveRecord::EVENT_AFTER_UPDATE => 'clearCacheEvent',
             BaseActiveRecord::EVENT_AFTER_DELETE => 'clearCacheEvent',
         ];
