@@ -28,6 +28,8 @@ use yii\db\BaseActiveRecord;
  * ```
  *
  * @property BaseActiveRecord $owner
+ * @property string $cacheKeyPrefixName
+ *
  */
 class CacheBehavior extends Behavior
 {
@@ -48,11 +50,25 @@ class CacheBehavior extends Behavior
     public $backupCache = false;
 
     /**
-     * An array of the models to clear cache when this models cache is cleared
+     * The relations to clear cache when this models cache is cleared.
      *
      * @var array
      */
     public $cacheRelations = [];
+
+    /**
+     * Unique md5 for this model.
+     *
+     * @var string
+     */
+    private $_cacheKeyPrefixName;
+
+    /**
+     * Models that have already been cleared.
+     *
+     * @var array
+     */
+    private $_cleared = [];
 
     /**
      * @inheritdoc
@@ -67,7 +83,7 @@ class CacheBehavior extends Behavior
     }
 
     /**
-     * Set the attribute with the current timestamp to mark as deleted
+     * Event to clear cache.
      *
      * @param Event $event
      */
@@ -112,17 +128,26 @@ class CacheBehavior extends Behavior
     }
 
     /**
-     * Clear cache for this model
+     * Clear cache for model and relations.
+     *
+     * @param bool $resetCleared
      */
-    public function clearCache()
+    public function clearCache($resetCleared = true)
     {
-        $owner = $this->owner;
+        // check for recursion
+        if ($reset) {
+            $this->_cleared = [];
+        }
+        if (isset($this->_cleared[$this->cacheKeyPrefixName])) {
+            return;
+        }
+        $this->_cleared[$this->cacheKeyPrefixName] = true;
         // clear related cache
         foreach ($this->cacheRelations as $cacheRelation) {
-            $models = is_array($owner->$cacheRelation) ? $owner->$cacheRelation : array($owner->$cacheRelation);
+            $models = is_array($this->owner->$cacheRelation) ? $this->owner->$cacheRelation : [$this->owner->$cacheRelation];
             foreach ($models as $cacheRelationModel) {
                 if ($cacheRelationModel instanceof BaseActiveRecord) {
-                    $cacheRelationModel->clearCache();
+                    $cacheRelationModel->clearCache(false);
                 }
             }
         }
@@ -135,12 +160,11 @@ class CacheBehavior extends Behavior
      *
      * @param null|string $cacheKeyPrefix
      */
-    public function clearCacheKeyPrefix()
+    private function clearCacheKeyPrefix()
     {
-        $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
-        Yii::$app->{$this->cache}->delete($cacheKeyPrefixName);
+        Yii::$app->{$this->cache}->delete($this->cacheKeyPrefixName);
         if ($this->backupCache) {
-            Yii::$app->{$this->backupCache}->delete($cacheKeyPrefixName);
+            Yii::$app->{$this->backupCache}->delete($this->cacheKeyPrefixName);
         }
     }
 
@@ -149,18 +173,17 @@ class CacheBehavior extends Behavior
      *
      * @return bool|string
      */
-    public function getCacheKeyPrefix()
+    private function getCacheKeyPrefix()
     {
-        $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
-        $cacheKeyPrefix = Yii::$app->{$this->cache}->get($cacheKeyPrefixName);
+        $cacheKeyPrefix = Yii::$app->{$this->cache}->get($this->cacheKeyPrefixName);
         if (!$cacheKeyPrefix && $this->backupCache) {
-            $cacheKeyPrefix = Yii::$app->{$this->backupCache}->get($cacheKeyPrefixName);
+            $cacheKeyPrefix = Yii::$app->{$this->backupCache}->get($this->cacheKeyPrefixName);
         }
         if (!$cacheKeyPrefix) {
             $cacheKeyPrefix = uniqid();
-            Yii::$app->{$this->cache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
+            Yii::$app->{$this->cache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
             if ($this->backupCache) {
-                Yii::$app->{$this->backupCache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
+                Yii::$app->{$this->backupCache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
             }
         }
         return $cacheKeyPrefix;
@@ -171,11 +194,14 @@ class CacheBehavior extends Behavior
      *
      * @return string
      */
-    protected function getCacheKeyPrefixName()
+    private function getCacheKeyPrefixName()
     {
-        $owner = $this->owner;
-        $pk = is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey();
-        return md5($owner->className() . '.getCacheKeyPrefix.' . $pk);
+        if (!$this->_cacheKeyPrefixName) {
+            $owner = $this->owner;
+            $pk = is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey();
+            $this->_cacheKeyPrefixName = md5($owner->className() . '.getCacheKeyPrefix.' . $pk);
+        }
+        return $this->_cacheKeyPrefixName;
     }
 
 }
