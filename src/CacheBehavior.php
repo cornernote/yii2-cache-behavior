@@ -138,9 +138,9 @@ class CacheBehavior extends Behavior
     public function clearCacheKeyPrefix()
     {
         $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
-        $cacheKeyPrefix = Yii::$app->{$this->cache}->delete($cacheKeyPrefixName);
+        Yii::$app->{$this->cache}->delete($cacheKeyPrefixName);
         if ($this->backupCache) {
-            $cacheKeyPrefix = Yii::$app->{$this->backupCache}->delete($cacheKeyPrefixName);
+            Yii::$app->{$this->backupCache}->delete($cacheKeyPrefixName);
         }
     }
 
