@@ -64,11 +64,11 @@ class CacheBehavior extends Behavior
     protected $_cacheKeyPrefixName;
 
     /**
-     * Models that have already been cleared.
+     * Keys that have already been cleared.
      *
      * @var array
      */
-    protected $_cleared = [];
+    protected $_cacheKeysCleared = [];
 
     /**
      * @inheritdoc
@@ -173,7 +173,7 @@ class CacheBehavior extends Behavior
      *
      * @return bool|string
      */
-    protected function getCacheKeyPrefix()
+    public function getCacheKeyPrefix()
     {
         $cacheKeyPrefix = Yii::$app->{$this->cache}->get($this->cacheKeyPrefixName);
         if (!$cacheKeyPrefix && $this->backupCache) {
@@ -194,7 +194,7 @@ class CacheBehavior extends Behavior
      *
      * @return string
      */
-    protected function getCacheKeyPrefixName()
+    public function getCacheKeyPrefixName()
     {
         if (!$this->_cacheKeyPrefixName) {
             $owner = $this->owner;
