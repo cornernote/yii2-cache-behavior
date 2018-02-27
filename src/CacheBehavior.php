@@ -127,7 +127,21 @@ class CacheBehavior extends Behavior
             }
         }
         // clear own cache
-        $this->setCacheKeyPrefix();
+        $this->clearCacheKeyPrefix();
+    }
+
+    /**
+     * Clear the cache prefix.
+     *
+     * @param null|string $cacheKeyPrefix
+     */
+    public function clearCacheKeyPrefix()
+    {
+        $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
+        $cacheKeyPrefix = Yii::$app->{$this->cache}->delete($cacheKeyPrefixName);
+        if ($this->backupCache) {
+            $cacheKeyPrefix = Yii::$app->{$this->backupCache}->delete($cacheKeyPrefixName);
+        }
     }
 
     /**
@@ -145,25 +159,11 @@ class CacheBehavior extends Behavior
         if (!$cacheKeyPrefix) {
             $cacheKeyPrefix = uniqid();
             Yii::$app->{$this->cache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
+            if ($this->backupCache) {
+                Yii::$app->{$this->backupCache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
+            }
         }
         return $cacheKeyPrefix;
-    }
-
-    /**
-     * Set the cache prefix.
-     *
-     * @param null|string $cacheKeyPrefix
-     */
-    public function setCacheKeyPrefix($cacheKeyPrefix = null)
-    {
-        $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
-        if (!$cacheKeyPrefix) {
-            $cacheKeyPrefix = uniqid();
-        }
-        Yii::$app->{$this->cache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
-        if ($this->backupCache) {
-            Yii::$app->{$this->backupCache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
-        }
     }
 
     /**
