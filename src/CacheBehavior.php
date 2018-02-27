@@ -136,12 +136,12 @@ class CacheBehavior extends Behavior
     {
         // check for recursion
         if ($resetCleared) {
-            $this->_cleared = [];
+            $this->_cacheKeysCleared = [];
         }
-        if (isset($this->_cleared[$this->cacheKeyPrefixName])) {
+        if (isset($this->_cacheKeysCleared[$this->cacheKeyPrefixName])) {
             return;
         }
-        $this->_cleared[$this->cacheKeyPrefixName] = true;
+        $this->_cacheKeysCleared[$this->cacheKeyPrefixName] = true;
         // clear related cache
         foreach ($this->cacheRelations as $cacheRelation) {
             $models = is_array($this->owner->$cacheRelation) ? $this->owner->$cacheRelation : [$this->owner->$cacheRelation];
