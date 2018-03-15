@@ -105,6 +105,9 @@ class CacheBehavior extends Behavior
         $value = Yii::$app->{$this->cache}->get($fullKey);
         if (!$value && $useBackupCache && $this->backupCache) {
             $value = Yii::$app->{$this->backupCache}->get($fullKey);
+            if ($value !== false) {
+                Yii::$app->{$this->cache}->set($fullKey, $value);
+            }
         }
         return $value;
     }
