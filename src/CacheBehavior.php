@@ -216,7 +216,7 @@ class CacheBehavior extends Behavior
         if (!$this->_cacheKeyPrefixName) {
             $owner = $this->owner;
             $pk = is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey();
-            $this->_cacheKeyPrefixName = md5($owner->className() . '.getCacheKeyPrefix.' . $pk);
+            $this->_cacheKeyPrefixName = md5($owner->className() . '.getCacheKeyPrefixName.' . $pk);
         }
         return $this->_cacheKeyPrefixName;
     }
