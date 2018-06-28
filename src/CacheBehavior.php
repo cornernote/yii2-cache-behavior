@@ -170,11 +170,7 @@ class CacheBehavior extends Behavior
             $cacheKeyPrefix = Yii::$app->{$this->backupCache}->get($this->cacheKeyPrefixName);
         }
         if (!$cacheKeyPrefix) {
-            $cacheKeyPrefix = uniqid();
-            Yii::$app->{$this->cache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
-            if ($this->backupCache) {
-                Yii::$app->{$this->backupCache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
-            }
+            $cacheKeyPrefix = $this->setCacheKeyPrefix($cacheKeyPrefix);
         }
         return $cacheKeyPrefix;
     }
@@ -186,14 +182,14 @@ class CacheBehavior extends Behavior
      */
     public function setCacheKeyPrefix($cacheKeyPrefix = null)
     {
-        $cacheKeyPrefixName = $this->getCacheKeyPrefixName();
         if (!$cacheKeyPrefix) {
-            $cacheKeyPrefix = uniqid();
+            $cacheKeyPrefix = bin2hex(openssl_random_pseudo_bytes(10));
         }
-        Yii::$app->{$this->cache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
+        Yii::$app->{$this->cache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
         if ($this->backupCache) {
-            Yii::$app->{$this->backupCache}->set($cacheKeyPrefixName, $cacheKeyPrefix);
+            Yii::$app->{$this->backupCache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
         }
+        return $cacheKeyPrefix;
     }
 
 
