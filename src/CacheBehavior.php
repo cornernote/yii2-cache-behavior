@@ -170,7 +170,7 @@ class CacheBehavior extends Behavior
             $cacheKeyPrefix = Yii::$app->{$this->backupCache}->get($this->cacheKeyPrefixName);
         }
         if (!$cacheKeyPrefix) {
-            $cacheKeyPrefix = $this->setCacheKeyPrefix($cacheKeyPrefix);
+            $cacheKeyPrefix = $this->setCacheKeyPrefix();
         }
         return $cacheKeyPrefix;
     }
