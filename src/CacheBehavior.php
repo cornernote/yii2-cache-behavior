@@ -183,7 +183,7 @@ class CacheBehavior extends Behavior
     public function setCacheKeyPrefix($cacheKeyPrefix = null)
     {
         if (!$cacheKeyPrefix) {
-            $cacheKeyPrefix = bin2hex(openssl_random_pseudo_bytes(10));
+            $cacheKeyPrefix = md5($this->cacheKeyPrefixName . '.' . bin2hex(openssl_random_pseudo_bytes(10)));
         }
         Yii::$app->{$this->cache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
         if ($this->backupCache) {
