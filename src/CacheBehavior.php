@@ -1,7 +1,7 @@
 <?php
 /**
  * @author Brett O'Donnell <cornernote@gmail.com>
- * @copyright 2016 Mr PHP
+ * @copyright 2018 Mr PHP
  * @link https://github.com/cornernote/yii2-cache-behavior
  * @license BSD-3-Clause https://raw.github.com/cornernote/yii2-cache-behavior/master/LICENSE.md
  */
@@ -11,6 +11,8 @@ namespace cornernote\cachebehavior;
 use Yii;
 use yii\base\Behavior;
 use yii\base\Event;
+use yii\caching\Cache;
+use yii\caching\TagDependency;
 use yii\db\BaseActiveRecord;
 
 /**
@@ -28,26 +30,19 @@ use yii\db\BaseActiveRecord;
  * ```
  *
  * @property BaseActiveRecord $owner
- * @property string $cacheKeyPrefixName
+ * @property Cacge $cacheComponent
+ * @property string $cachePrefix
+ * @property string $cacheTags
  *
  */
 class CacheBehavior extends Behavior
 {
     /**
-     * The cache component to use.
+     * The name of the Yii application cache component to use.
      *
      * @var string
      */
     public $cache = 'cache';
-
-    /**
-     * A backup cache component to use.
-     * For example if your main cache is MemCache then you may want to use
-     * FileCache or DbCache as a backup cache storage.
-     *
-     * @var bool
-     */
-    public $backupCache = false;
 
     /**
      * The relations to clear cache when this models cache is cleared.
@@ -61,14 +56,12 @@ class CacheBehavior extends Behavior
      *
      * @var string
      */
-    protected $_cacheKeyPrefixName;
+    protected $_cachePrefix;
 
     /**
-     * Keys that have already been cleared.
-     *
      * @var array
      */
-    protected $_cacheKeysCleared = [];
+    protected $_cacheTags;
 
     /**
      * @inheritdoc
@@ -96,20 +89,11 @@ class CacheBehavior extends Behavior
      * Get a cached value.
      *
      * @param string $key
-     * @param bool $useBackupCache
      * @return mixed
      */
-    public function getCache($key, $useBackupCache = false)
+    public function getCache($key)
     {
-        $fullKey = $this->getCacheKeyPrefix() . '.' . $key;
-        $value = Yii::$app->{$this->cache}->get($fullKey);
-        if (!$value && $useBackupCache && $this->backupCache) {
-            $value = Yii::$app->{$this->backupCache}->get($fullKey);
-            if ($value !== false) {
-                Yii::$app->{$this->cache}->set($fullKey, $value);
-            }
-        }
-        return $value;
+        return $this->cacheComponent->get($this->cachePrefix . '.' . $key);
     }
 
     /**
@@ -117,93 +101,23 @@ class CacheBehavior extends Behavior
      *
      * @param string $key
      * @param mixed $value
-     * @param bool $useBackupCache
+     * @param int $duration
      * @return mixed
      */
-    public function setCache($key, $value, $useBackupCache = false)
+    public function setCache($key, $value, $duration = 0)
     {
-        $fullKey = $this->getCacheKeyPrefix() . '.' . $key;
-        Yii::$app->{$this->cache}->set($fullKey, $value);
-        if ($useBackupCache && $this->backupCache) {
-            Yii::$app->{$this->backupCache}->set($fullKey, $value);
-        }
+        $fullKey = $this->cachePrefix . '.' . $key;
+        $dependency = new TagDependency(['tags' => $this->cacheTags]);
+        $this->cacheComponent->set($fullKey, $value, $duration, $dependency);
         return $value;
     }
 
     /**
      * Clear cache for model and relations.
-     *
-     * @param bool $resetCleared
      */
-    public function clearCache($resetCleared = true)
+    public function clearCache()
     {
-        // check for recursion
-        if ($resetCleared) {
-            $this->_cacheKeysCleared = [];
-        }
-        if (isset($this->_cacheKeysCleared[$this->cacheKeyPrefixName])) {
-            return;
-        }
-        $this->_cacheKeysCleared[$this->cacheKeyPrefixName] = true;
-        // clear related cache
-        foreach ($this->cacheRelations as $cacheRelation) {
-            $models = is_array($this->owner->$cacheRelation) ? $this->owner->$cacheRelation : [$this->owner->$cacheRelation];
-            foreach ($models as $cacheRelationModel) {
-                if ($cacheRelationModel instanceof BaseActiveRecord) {
-                    $cacheRelationModel->clearCache(false);
-                }
-            }
-        }
-        // clear own cache
-        $this->clearCacheKeyPrefix();
-    }
-
-    /**
-     * Get the cache prefix.
-     *
-     * @return bool|string
-     */
-    public function getCacheKeyPrefix()
-    {
-        $cacheKeyPrefix = Yii::$app->{$this->cache}->get($this->cacheKeyPrefixName);
-        if (!$cacheKeyPrefix && $this->backupCache) {
-            $cacheKeyPrefix = Yii::$app->{$this->backupCache}->get($this->cacheKeyPrefixName);
-        }
-        if (!$cacheKeyPrefix) {
-            $cacheKeyPrefix = $this->setCacheKeyPrefix();
-        }
-        return $cacheKeyPrefix;
-    }
-
-    /**
-     * Set the cache prefix.
-     *
-     * @param null|string $cacheKeyPrefix
-     */
-    public function setCacheKeyPrefix($cacheKeyPrefix = null)
-    {
-        if (!$cacheKeyPrefix) {
-            $cacheKeyPrefix = md5($this->cacheKeyPrefixName . '.' . bin2hex(openssl_random_pseudo_bytes(10)));
-        }
-        Yii::$app->{$this->cache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
-        if ($this->backupCache) {
-            Yii::$app->{$this->backupCache}->set($this->cacheKeyPrefixName, $cacheKeyPrefix);
-        }
-        return $cacheKeyPrefix;
-    }
-
-
-    /**
-     * Clear the cache prefix.
-     *
-     * @param null|string $cacheKeyPrefix
-     */
-    protected function clearCacheKeyPrefix()
-    {
-        Yii::$app->{$this->cache}->delete($this->cacheKeyPrefixName);
-        if ($this->backupCache) {
-            Yii::$app->{$this->backupCache}->delete($this->cacheKeyPrefixName);
-        }
+        TagDependency::invalidate($this->cacheComponent, $this->cacheTags);
     }
 
     /**
@@ -211,14 +125,49 @@ class CacheBehavior extends Behavior
      *
      * @return string
      */
-    public function getCacheKeyPrefixName()
+    public function getCachePrefix()
     {
-        if (!$this->_cacheKeyPrefixName) {
+        if (!$this->_cachePrefix) {
             $owner = $this->owner;
-            $pk = is_array($owner->getPrimaryKey()) ? implode('-', $owner->getPrimaryKey()) : $owner->getPrimaryKey();
-            $this->_cacheKeyPrefixName = md5($owner->className() . '.getCacheKeyPrefixName.' . $pk);
+            $pk = is_array($owner->primaryKey) ? implode('-', $owner->primaryKey) : $owner->primaryKey;
+            $this->_cachePrefix = md5($owner->className() . '.cachePrefix.' . $pk);
         }
-        return $this->_cacheKeyPrefixName;
+        return $this->_cachePrefix;
+    }
+
+    /**
+     * Get the tags that need to be cleared when this model is cleared.
+     *
+     * @return array
+     */
+    public function getCacheTags()
+    {
+        $this->_cacheTags = $this->cacheComponent->get($this->cachePrefix . '.tags');
+        if ($this->_cacheTags) return $this->_cacheTags;
+        $this->_cacheTags = [];
+
+        $this->_cacheTags = [$this->cachePrefix];
+        foreach ($this->cacheRelations as $cacheRelation) {
+            $models = is_array($this->owner->$cacheRelation) ? $this->owner->$cacheRelation : [$this->owner->$cacheRelation];
+            foreach ($models as $model) {
+                if ($model instanceof BaseActiveRecord) {
+                    $this->_cacheTags[] = $model->cachePrefix;
+                }
+            }
+        }
+
+        $this->cacheComponent->set($this->cachePrefix . '.tags', $this->_cacheTags, 0);
+        return $this->_cacheTags;
+    }
+
+    /**
+     * Get the Yii application cache component
+     *
+     * @return Cache
+     */
+    protected function getCacheComponent()
+    {
+        return Yii::$app->{$this->cache};
     }
 
 }
